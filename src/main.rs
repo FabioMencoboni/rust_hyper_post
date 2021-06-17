@@ -44,7 +44,7 @@ async fn main() -> GenericResult<()> {
     println!("{:?}", task); // WORKS: prints Task { id: 10, userId: 1, title: "illo est ratione doloremque quia maiores aut", completed: true }
 
     
-    // But why does POST not work?
+    // But why does POST have to have a header to get the whole thing back?
     let payload = Payload {
         userId: 1i32,
         title: "here are my thoughts".to_string(),
@@ -53,10 +53,9 @@ async fn main() -> GenericResult<()> {
     let smp: SocialMediaPost = post("http://jsonplaceholder.typicode.com/posts", &payload).await.unwrap();
     println!("{:?}", smp);
 
-
     Ok(())
-    
 }
+
 
 pub async fn get<T: DeserializeOwned>(url: &str) -> GenericResult<T> {
     let request = Request::builder()
@@ -69,13 +68,11 @@ pub async fn get<T: DeserializeOwned>(url: &str) -> GenericResult<T> {
     let bytes = body::to_bytes(resp.into_body()).await.unwrap();
     let foo = serde_json::from_slice::<T>(&bytes).unwrap();
     Ok(foo)
-
 }
 
 
+
 async fn post<U: Serialize, T: DeserializeOwned>(url: &str, payload: &U) -> GenericResult<T> {
-    // Make a GET request with an authorization header, expecting JSON in response
-    //DEV// println!("GET: {}", url);
     let body_string = serde_json::to_string(payload).unwrap();
     let request = Request::builder()
         .method(Method::POST)
@@ -86,10 +83,8 @@ async fn post<U: Serialize, T: DeserializeOwned>(url: &str, payload: &U) -> Gene
         .body(Body::from(body_string)).unwrap();
     let client = Client::new();
     let resp = client.request(request).await.unwrap();
-    // getting bytes: see https://stackoverflow.com/questions/43419974/how-do-i-read-the-entire-body-of-a-tokio-based-hyper-request
     let bytes = body::to_bytes(resp.into_body()).await.unwrap();
     println!("GOT BYTES: {}", std::str::from_utf8(&bytes).unwrap() );
     let foo = serde_json::from_slice::<T>(&bytes).unwrap();
     Ok(foo)
-
 }
